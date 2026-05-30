@@ -1,0 +1,46 @@
+﻿@model StudentPortal.Models.Student
+
+<div class="container mt-5">
+
+    
+    <div class="card shadow">
+
+        <div class="card-header bg-warning">
+            Edit Student
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                <input asp-for="Id" type="hidden" />
+
+                <div class="mb-3">
+                    <label>Name</label>
+                    <input asp-for="Name"
+                           class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Age</label>
+                    <input asp-for="Age"
+                           class="form-control" />
+                </div>
+
+                <button class="btn btn-success">
+                    Save Changes
+                </button>
+
+                <a asp-action="Index"
+                   class="btn btn-secondary">
+                    Back
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+    
+
+</div>

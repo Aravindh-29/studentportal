@@ -1,0 +1,110 @@
+@model StudentPortal.Models.Student
+
+@{
+    ViewData["Title"] = "Student Details";
+    var initials = string.Concat(
+        Model.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+               .Take(2)
+               .Select(w => w[0].ToString().ToUpper())
+    );
+}
+
+@section Styles {
+<style>
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; }
+    .page-header h1 span { color: var(--accent); }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+
+    .detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); max-width: 620px; overflow: hidden; }
+
+    .detail-profile {
+        padding: 36px 28px;
+        background: linear-gradient(135deg, rgba(91,124,250,.12), rgba(167,139,250,.06));
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 20px;
+    }
+    .profile-avatar {
+        width: 72px; height: 72px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: grid; place-items: center;
+        font-family: var(--font-head);
+        font-size: 1.6rem; font-weight: 800; color: #fff;
+        box-shadow: 0 8px 24px var(--accent-glow);
+        flex-shrink: 0;
+    }
+    .profile-info h2 { font-family: var(--font-head); font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; }
+    .profile-info .id-chip { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 3px 10px; background: rgba(91,124,250,.12); border: 1px solid rgba(91,124,250,.2); border-radius: 6px; font-size: .78rem; color: var(--accent); }
+
+    .detail-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 0; }
+    .detail-row {
+        display: flex; align-items: flex-start; gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-icon {
+        width: 36px; height: 36px; border-radius: 9px;
+        background: var(--surface2);
+        display: grid; place-items: center;
+        font-size: .85rem; color: var(--muted);
+        flex-shrink: 0; margin-top: 2px;
+    }
+    .detail-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 3px; }
+    .detail-value { font-size: .9rem; color: var(--text); line-height: 1.5; }
+
+    .detail-footer { padding: 20px 28px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border: none; border-radius: 10px; font-family: var(--font-body); font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; box-shadow: 0 4px 16px var(--accent-glow); }
+    .btn-primary:hover { transform: translateY(-1px); color: #fff; }
+    .btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-family: var(--font-body); font-size: .875rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all .2s; }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn-danger { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: transparent; border: 1px solid rgba(248,113,113,.3); border-radius: 10px; color: var(--red); font-family: var(--font-body); font-size: .875rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all .2s; margin-left: auto; }
+    .btn-danger:hover { background: rgba(248,113,113,.08); border-color: var(--red); color: var(--red); }
+</style>
+}
+
+<div class="page-header">
+    <h1>Student <span>Details</span></h1>
+    <p>Full information for this student record</p>
+</div>
+
+<div class="detail-card">
+    <div class="detail-profile">
+        <div class="profile-avatar">@initials</div>
+        <div class="profile-info">
+            <h2>@Model.Name</h2>
+            <div class="id-chip"><i class="fas fa-hashtag"></i> Student ID: @Model.Id</div>
+        </div>
+    </div>
+
+    <div class="detail-body">
+        <div class="detail-row">
+            <div class="detail-icon"><i class="fas fa-envelope"></i></div>
+            <div>
+                <div class="detail-label">Email Address</div>
+                <div class="detail-value">@Model.Email</div>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-icon"><i class="fas fa-phone"></i></div>
+            <div>
+                <div class="detail-label">Phone Number</div>
+                <div class="detail-value">@Model.PhoneNumber</div>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-icon"><i class="fas fa-location-dot"></i></div>
+            <div>
+                <div class="detail-label">Address</div>
+                <div class="detail-value">@Model.Address</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-footer">
+        <a asp-action="Index" class="btn-ghost"><i class="fas fa-arrow-left"></i> Back</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-primary"><i class="fas fa-pen"></i> Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger"><i class="fas fa-trash"></i> Delete</a>
+    </div>
+</div>

@@ -1,0 +1,174 @@
+@model StudentPortal.Models.Student
+
+@{
+    ViewData["Title"] = "Add Student";
+}
+
+@section Styles {
+<style>
+    .form-header { margin-bottom: 28px; }
+    .form-header h1 {
+        font-family: var(--font-head);
+        font-size: 1.6rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+    .form-header h1 span { color: var(--accent); }
+    .form-header p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+
+    .form-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        max-width: 680px;
+        overflow: hidden;
+    }
+    .form-card-header {
+        padding: 20px 28px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .form-card-header .card-icon {
+        width: 36px; height: 36px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: grid; place-items: center;
+        color: #fff;
+        font-size: .9rem;
+    }
+    .form-card-header h2 {
+        font-family: var(--font-head);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .form-body { padding: 28px; }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: span 2; }
+    .form-group label {
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .form-control {
+        padding: 11px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: .9rem;
+        outline: none;
+        transition: all .2s;
+        width: 100%;
+    }
+    .form-control::placeholder { color: var(--muted); }
+    .form-control:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(91,124,250,.12);
+    }
+    textarea.form-control { resize: vertical; min-height: 90px; }
+    .field-validation-error {
+        font-size: .78rem;
+        color: var(--red);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .field-validation-error::before { content: "⚠"; }
+    .form-footer {
+        padding: 20px 28px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    .btn-primary {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 24px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff; border: none; border-radius: 10px;
+        font-family: var(--font-body); font-size: .875rem; font-weight: 600;
+        cursor: pointer; text-decoration: none;
+        transition: all .2s;
+        box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px var(--accent-glow); color: #fff; }
+    .btn-ghost {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 20px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--muted);
+        font-family: var(--font-body); font-size: .875rem; font-weight: 500;
+        cursor: pointer; text-decoration: none;
+        transition: all .2s;
+    }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    @@media(max-width:580px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .form-group.full { grid-column: span 1; }
+    }
+</style>
+}
+
+<div class="form-header">
+    <h1>Add <span>Student</span></h1>
+    <p>Fill in the details below to enrol a new student</p>
+</div>
+
+<div class="form-card">
+    <div class="form-card-header">
+        <div class="card-icon"><i class="fas fa-user-plus"></i></div>
+        <h2>Student Information</h2>
+    </div>
+
+    <form asp-action="Create">
+        <div asp-validation-summary="ModelOnly" class="field-validation-error" style="padding:12px 28px;"></div>
+
+        <div class="form-body">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label asp-for="Name">Full Name</label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g. Aravindh Kumar" />
+                    <span asp-validation-for="Name" class="field-validation-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Email">Email Address</label>
+                    <input asp-for="Email" class="form-control" placeholder="student@example.com" />
+                    <span asp-validation-for="Email" class="field-validation-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PhoneNumber">Phone Number</label>
+                    <input asp-for="PhoneNumber" class="form-control" placeholder="+60 12-345 6789" />
+                    <span asp-validation-for="PhoneNumber" class="field-validation-error"></span>
+                </div>
+                <div class="form-group full">
+                    <label asp-for="Address">Address</label>
+                    <textarea asp-for="Address" class="form-control" placeholder="Street, City, Country…"></textarea>
+                    <span asp-validation-for="Address" class="field-validation-error"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <a asp-action="Index" class="btn-ghost"><i class="fas fa-arrow-left"></i> Cancel</a>
+            <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Add Student</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

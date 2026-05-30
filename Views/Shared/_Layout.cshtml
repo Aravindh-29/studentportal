@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — StudentPortal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        :root {
+            --bg:          #0c0f1a;
+            --surface:     #131729;
+            --surface2:    #1a1f35;
+            --border:      rgba(255,255,255,0.07);
+            --accent:      #5b7cfa;
+            --accent2:     #a78bfa;
+            --accent-glow: rgba(91,124,250,0.25);
+            --green:       #34d399;
+            --amber:       #fbbf24;
+            --red:         #f87171;
+            --text:        #e2e8f0;
+            --muted:       #64748b;
+            --sidebar-w:   260px;
+            --radius:      14px;
+            --font-head:   'Syne', sans-serif;
+            --font-body:   'DM Sans', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── SIDEBAR ─────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            transition: transform .3s ease;
+        }
+        .sidebar-logo {
+            padding: 28px 24px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 10px;
+            display: grid; place-items: center;
+            font-size: 18px; color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .logo-text {
+            font-family: var(--font-head);
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+        .logo-text span { color: var(--accent); }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 12px;
+            overflow-y: auto;
+        }
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 8px 12px 6px;
+            margin-top: 8px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: .875rem;
+            font-weight: 500;
+            transition: all .2s;
+            margin-bottom: 2px;
+        }
+        .nav-item i { width: 18px; text-align: center; font-size: .9rem; }
+        .nav-item:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(91,124,250,.18), rgba(167,139,250,.08));
+            color: var(--accent);
+            border: 1px solid rgba(91,124,250,.2);
+        }
+        .nav-item.active i { color: var(--accent); }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            font-size: .75rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: pulse 2s infinite;
+        }
+        @@keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .4; }
+        }
+
+        /* ── MAIN ────────────────────────────────────── */
+        .main-wrapper {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .topbar {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(12,15,26,0.8);
+            backdrop-filter: blur(12px);
+            position: sticky; top: 0; z-index: 50;
+        }
+        .topbar-title {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+        }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar-btn {
+            width: 36px; height: 36px;
+            border-radius: 9px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            display: grid; place-items: center;
+            cursor: pointer;
+            transition: all .2s;
+            font-size: .85rem;
+        }
+        .topbar-btn:hover { color: var(--text); border-color: var(--accent); }
+        .avatar {
+            width: 36px; height: 36px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: grid; place-items: center;
+            font-size: .8rem; font-weight: 700; color: #fff;
+            cursor: pointer;
+        }
+
+        .page-content {
+            flex: 1;
+            padding: 32px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* ── ALERTS ──────────────────────────────────── */
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: .875rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid transparent;
+        }
+        .alert-success { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.25); color: var(--green); }
+        .alert-danger  { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.25); color: var(--red); }
+
+        /* ── MOBILE TOGGLE ───────────────────────────── */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 14px; left: 14px;
+            z-index: 200;
+            width: 38px; height: 38px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            color: var(--text);
+            cursor: pointer;
+            place-items: center;
+        }
+        @@media(max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .mobile-toggle { display: grid; }
+            .main-wrapper { margin-left: 0; }
+            .page-content { padding: 20px 16px; }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div class="logo-text">Student<span>Portal</span></div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-label">Overview</div>
+        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
+           href="/Home/Index">
+            <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+
+        <div class="nav-label">Academics</div>
+        <a class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Students" ? "active" : "")"
+           href="/Students">
+            <i class="fas fa-users"></i> Students
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="status-dot"></div>
+        System Online
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrapper">
+    <header class="topbar">
+        <div class="topbar-title">@ViewData["Title"]</div>
+        <div class="topbar-actions">
+            <div class="topbar-btn"><i class="fas fa-bell"></i></div>
+            <div class="avatar">SP</div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+        }
+        @RenderBody()
+    </main>
+</div>
+
+<script>
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', e => {
+        const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth <= 768 && sidebar.classList.contains('open')
+            && !sidebar.contains(e.target) && !e.target.closest('.mobile-toggle')) {
+            sidebar.classList.remove('open');
+        }
+    });
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

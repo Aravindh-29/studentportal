@@ -1,0 +1,77 @@
+@model StudentPortal.Models.Student
+
+@{
+    ViewData["Title"] = "Delete Student";
+    var initials = string.Concat(
+        Model.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+               .Take(2)
+               .Select(w => w[0].ToString().ToUpper())
+    );
+}
+
+@section Styles {
+<style>
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; }
+    .page-header h1 span { color: var(--red); }
+    .page-header p { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+
+    .delete-card { background: var(--surface); border: 1px solid rgba(248,113,113,.25); border-radius: var(--radius); max-width: 520px; overflow: hidden; }
+
+    .delete-warning {
+        padding: 28px;
+        background: rgba(248,113,113,.06);
+        border-bottom: 1px solid rgba(248,113,113,.15);
+        display: flex; align-items: flex-start; gap: 16px;
+    }
+    .warn-icon { font-size: 2rem; color: var(--red); line-height: 1; margin-top: 2px; }
+    .warn-title { font-family: var(--font-head); font-size: 1.05rem; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .warn-text { font-size: .875rem; color: var(--muted); line-height: 1.5; }
+
+    .delete-student {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 14px;
+    }
+    .student-avatar { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .student-name-big { font-family: var(--font-head); font-size: 1.05rem; font-weight: 700; }
+    .student-meta { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    .delete-footer { padding: 20px 28px; display: flex; gap: 10px; align-items: center; }
+    .btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-family: var(--font-body); font-size: .875rem; font-weight: 500; cursor: pointer; text-decoration: none; transition: all .2s; }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn-danger-solid { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border: none; border-radius: 10px; font-family: var(--font-body); font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; box-shadow: 0 4px 16px rgba(239,68,68,.3); }
+    .btn-danger-solid:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(239,68,68,.4); color: #fff; }
+</style>
+}
+
+<div class="page-header">
+    <h1>Delete <span>Student</span></h1>
+    <p>This action cannot be undone</p>
+</div>
+
+<div class="delete-card">
+    <div class="delete-warning">
+        <div class="warn-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div>
+            <div class="warn-title">Confirm Deletion</div>
+            <div class="warn-text">You are about to permanently delete this student record. All associated data will be removed and cannot be recovered.</div>
+        </div>
+    </div>
+
+    <div class="delete-student">
+        <div class="student-avatar">@initials</div>
+        <div>
+            <div class="student-name-big">@Model.Name</div>
+            <div class="student-meta">@Model.Email &nbsp;·&nbsp; @Model.PhoneNumber</div>
+        </div>
+    </div>
+
+    <div class="delete-footer">
+        <a asp-action="Index" class="btn-ghost"><i class="fas fa-arrow-left"></i> Cancel</a>
+        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-danger-solid"><i class="fas fa-trash"></i> Yes, Delete</button>
+        </form>
+    </div>
+</div>
