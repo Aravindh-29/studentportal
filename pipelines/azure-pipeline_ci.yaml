@@ -1,0 +1,17 @@
+---
+trigger:
+ branches:
+  include:
+      - main
+pool:
+ vmImage: ubuntu-22.04
+
+stages:
+    - stage: Build
+      jobs:
+          - job: buildjob
+            steps:
+                - task: DotNetCoreCLI@2
+                  inputs:
+                      command: restore
+                
