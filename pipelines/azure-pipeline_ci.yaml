@@ -7,11 +7,16 @@ pool:
  vmImage: ubuntu-22.04
 
 stages:
-    - stage: Build
+    - stage: Restore
       jobs:
-          - job: buildjob
+          - job: restorejob
             steps:
                 - task: DotNetCoreCLI@2
                   inputs:
                       command: restore
+          - job: Build
+            steps:
+              - task: DotNetCoreCLI@2
+                inputs:
+                  command: build
                 
