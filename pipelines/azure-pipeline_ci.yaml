@@ -15,8 +15,8 @@ stages:
                   inputs:
                       command: restore
           - job: Build
+            dependsOn: restorejob
             steps:
               - task: DotNetCoreCLI@2
                 inputs:
                   command: build
-                
