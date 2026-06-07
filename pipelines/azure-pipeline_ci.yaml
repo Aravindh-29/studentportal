@@ -6,17 +6,31 @@ trigger:
 pool:
  vmImage: ubuntu-22.04
 
+variables:
+  buildConfiguration: Release
+
 stages:
     - stage: Build
+      displayName: Build Application
       jobs:
-          - job: restorejob
+          - job: BuildJob
             steps:
-                - task: DotNetCoreCLI@2
+                - checkout: self
+                - task: UseDotNet@2
+                  displayName: Install .Net SDK
                   inputs:
-                      command: restore
-          - job: Build
-            dependsOn: restorejob
-            steps:
-              - task: DotNetCoreCLI@2
-                inputs:
-                  command: build
+                    packageType: 'sdk'
+                    version: '9.0'
+                - task: DotNetCoreCLI@2
+                  displayName: Restore Packages
+
+                  inputs:
+                    command: restore
+                    projects: StudentPortal.csproj
+                - task: DotNetCoreCLI@2
+                  displayName: Build Appliction
+                  inputs:
+                    command: build
+                    projects: StudentPortal.csproj
+                    arguments: '--configuration $(buildConfiguration)'
+                    
