@@ -1,3 +1,4 @@
+
 trigger:
   branches:
     include:
@@ -101,21 +102,56 @@ stages:
             displayName: GitLeaks Scan
 
   - stage: DockerBuild
-    displayName: Build and Push Docker Image
+    displayName: Build Docker Image
     dependsOn: SecretScan
     jobs:
       - job: DockerBuildJob
-        displayName: Docker Build and Push
+        displayName: Docker Build Only
         steps:
           - checkout: self
 
           - task: Docker@2
-            displayName: Build and Push to ACR
+            displayName: Build Docker Image
             inputs:
               containerRegistry: 'gurukulacr'
               repository: 'studentportal'
-              command: 'buildAndPush'
+              command: 'build'
               Dockerfile: Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
+
+  - stage: ImageScan
+    displayName: Image Vulnerability Scan
+    dependsOn: DockerBuild
+    jobs:
+      - job: TrivyScan
+        displayName: Trivy Image Scan
+        steps:
+          - script: |
+              curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+              trivy image \
+                --exit-code 1 \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                studentportal:$(Build.BuildId)
+            displayName: Trivy Scan
+
+  - stage: DockerPush
+    displayName: Push Docker Image to ACR
+    dependsOn: ImageScan
+    jobs:
+      - job: DockerPushJob
+        displayName: Docker Push
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Push Image to ACR
+            inputs:
+              containerRegistry: 'gurukulacr'
+              repository: 'studentportal'
+              command: 'push'
               tags: |
                 $(Build.BuildId)
                 latest
