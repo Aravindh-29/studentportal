@@ -1,0 +1,164 @@
+
+
+# Complete Ci pipeline 
+
+```yaml
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  buildConfiguration: Release
+
+stages:
+  - stage: Build
+    displayName: Build Application
+    jobs:
+      - job: BuildJob
+        steps:
+          - checkout: self
+
+          - task: UseDotNet@2
+            displayName: Install .NET SDK
+            inputs:
+              packageType: 'sdk'
+              version: '9.x'
+
+          - task: SonarCloudPrepare@4
+            displayName: Prepare SonarCloud Scan
+            inputs:
+              SonarQube: 'StudentPortal_Scan'
+              organization: 'gurukul2026'
+              scannerMode: 'dotnet'
+              projectKey: 'gurukul2026'
+              projectName: 'Gurukul2026'
+
+          - task: DotNetCoreCLI@2
+            displayName: Restore Packages
+            inputs:
+              command: restore
+              projects: StudentPortal.csproj
+
+          - task: DotNetCoreCLI@2
+            displayName: Build Application
+            inputs:
+              command: build
+              projects: StudentPortal.csproj
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: SonarCloudAnalyze@4
+            displayName: Run SonarCloud Analysis
+
+          - task: SonarCloudPublish@4
+            displayName: Publish Quality Gate
+            inputs:
+              pollingTimeoutSec: '300'
+
+          - task: DotNetCoreCLI@2
+            displayName: Run Unit Tests
+            condition: false
+            inputs:
+              command: test
+              projects: '**/*Tests/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: Run Tests with Code Coverage
+            condition: false
+            inputs:
+              command: test
+              projects: '**/*Tests/*.csproj'
+              arguments: '--collect:"XPlat Code Coverage"'
+
+          - task: DotNetCoreCLI@2
+            displayName: Publish Application
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: StudentPortal.csproj
+              arguments: >
+                --configuration $(buildConfiguration)
+                --output $(Build.ArtifactStagingDirectory)
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Artifacts
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: drop
+
+  - stage: SecretScan
+    displayName: Secret Scan
+    dependsOn: Build
+    jobs:
+      - job: GitLeaks
+        displayName: GitLeaks Secret Scan
+        steps:
+          - checkout: self
+
+          - script: |
+              GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | sed 's/v//')
+              curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+              tar -xzf gitleaks.tar.gz
+              ./gitleaks detect --source="$(Build.SourcesDirectory)" --verbose
+            displayName: GitLeaks Scan
+
+  - stage: DockerBuild
+    displayName: Build Docker Image
+    dependsOn: SecretScan
+    jobs:
+      - job: DockerBuildJob
+        displayName: Docker Build Only
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Build Docker Image
+            inputs:
+              containerRegistry: 'gurukulacr'
+              repository: 'studentportal'
+              command: 'build'
+              Dockerfile: Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
+
+  - stage: ImageScan
+    displayName: Image Vulnerability Scan
+    dependsOn: DockerBuild
+    jobs:
+      - job: TrivyScan
+        displayName: Trivy Image Scan
+        steps:
+          - script: |
+              curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+              trivy image \
+                --exit-code 1 \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                studentportal:$(Build.BuildId)
+            displayName: Trivy Scan
+
+  - stage: DockerPush
+    displayName: Push Docker Image to ACR
+    dependsOn: ImageScan
+    jobs:
+      - job: DockerPushJob
+        displayName: Docker Push
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Push Image to ACR
+            inputs:
+              containerRegistry: 'gurukulacr'
+              repository: 'studentportal'
+              command: 'push'
+              tags: |
+                $(Build.BuildId)
+                latest
+
+```
