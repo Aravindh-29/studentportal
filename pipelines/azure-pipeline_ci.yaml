@@ -1,101 +1,119 @@
----
 trigger:
- branches:
-  include:
+  branches:
+    include:
       - main
+
 pool:
- vmImage: ubuntu-22.04
+  vmImage: ubuntu-22.04
 
 variables:
   buildConfiguration: Release
 
 stages:
-    - stage: Build
-      displayName: Build Application
-      jobs:
-          - job: BuildJob
-            steps:
-                - checkout: self
-                - task: UseDotNet@2
-                  displayName: Install .Net SDK
-                  inputs:
-                    packageType: 'sdk'
-                    version: '9.x'
-                - task: SonarCloudPrepare@4
-                  inputs:
-                    SonarQube: 'StudentPortal_Scan'
-                    organization: 'gurukul2026'
-                    scannerMode: 'dotnet'
-                    projectKey: 'gurukul2026'
-                    projectName: 'Gurukul2026'
-                  
-
-                - task: DotNetCoreCLI@2
-                  displayName: Restore Packages
-
-                  inputs:
-                    command: restore
-                    projects: StudentPortal.csproj
-                - task: DotNetCoreCLI@2
-                  displayName: Build Appliction
-                  inputs:
-                    command: build
-                    projects: StudentPortal.csproj
-                    arguments: '--configuration $(buildConfiguration)'
-
-                - task: SonarCloudAnalyze@4
-                  displayName: 'Run SonarCloud Analysis'
-
-                - task: SonarCloudPublish@4
-                  displayName: 'Publish Quality Gate'
-
-                  inputs:
-                    pollingTimeoutSec: '300'
-                - task: DotNetCoreCLI@2
-                  displayName: Publish Application
-                  inputs:
-                    command: publish
-                    publishWebProjects: false
-                    projects: StudentPortal.csproj
-                    arguments: >
-                      --configuration $(buildConfiguration)
-                      --output $(Build.ArtifactStagingDirectory)
-                - task: PublishBuildArtifacts@1
-                  displayName: Publish Artifacts
-
-                  inputs:
-                    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-                    ArtifactName: drop
-                - task: DotNetCoreCLI@2
-                  displayName: Run Tests
-                  condition: false
-
-                  inputs:
-                    command: test
-                    projects: '**/*Tests/*.csproj'
-                - task: DotNetCoreCLI@2
-                  displayName: Run Tests
-                  condition: false
-
-                  inputs:
-                    command: test
-                    projects: '**/*Tests/*.csproj'
-
-                    arguments: >
-                      --collect:"XPlat Code Coverage"
-    - stage: SecretScan
-
-      jobs:
-
-      - job: GitLeaks
-
+  - stage: Build
+    displayName: Build Application
+    jobs:
+      - job: BuildJob
         steps:
+          - checkout: self
 
-        - checkout: self
+          - task: UseDotNet@2
+            displayName: Install .NET SDK
+            inputs:
+              packageType: 'sdk'
+              version: '9.x'
 
-        - script: |
-            docker run --rm \
-            -v $(Build.SourcesDirectory):/repo \
-            zricethezav/gitleaks:latest detect \
-            --source="/repo"
-          displayName: GitLeaks Scan
+          - task: SonarCloudPrepare@4
+            displayName: Prepare SonarCloud Scan
+            inputs:
+              SonarQube: 'StudentPortal_Scan'
+              organization: 'gurukul2026'
+              scannerMode: 'dotnet'
+              projectKey: 'gurukul2026'
+              projectName: 'Gurukul2026'
+
+          - task: DotNetCoreCLI@2
+            displayName: Restore Packages
+            inputs:
+              command: restore
+              projects: StudentPortal.csproj
+
+          - task: DotNetCoreCLI@2
+            displayName: Build Application
+            inputs:
+              command: build
+              projects: StudentPortal.csproj
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: SonarCloudAnalyze@4
+            displayName: Run SonarCloud Analysis
+
+          - task: SonarCloudPublish@4
+            displayName: Publish Quality Gate
+            inputs:
+              pollingTimeoutSec: '300'
+
+          - task: DotNetCoreCLI@2
+            displayName: Run Unit Tests
+            condition: false
+            inputs:
+              command: test
+              projects: '**/*Tests/*.csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: Run Tests with Code Coverage
+            condition: false
+            inputs:
+              command: test
+              projects: '**/*Tests/*.csproj'
+              arguments: '--collect:"XPlat Code Coverage"'
+
+          - task: DotNetCoreCLI@2
+            displayName: Publish Application
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: StudentPortal.csproj
+              arguments: >
+                --configuration $(buildConfiguration)
+                --output $(Build.ArtifactStagingDirectory)
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Artifacts
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: drop
+
+  - stage: SecretScan
+    displayName: Secret Scan
+    dependsOn: Build
+    jobs:
+      - job: GitLeaks
+        displayName: GitLeaks Secret Scan
+        steps:
+          - checkout: self
+
+          - script: |
+              curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz
+              ./gitleaks detect --source="$(Build.SourcesDirectory)" --verbose
+            displayName: GitLeaks Scan
+
+  - stage: DockerBuild
+    displayName: Build and Push Docker Image
+    dependsOn: SecretScan
+    jobs:
+      - job: DockerBuildJob
+        displayName: Docker Build and Push
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Build and Push to ACR
+            inputs:
+              containerRegistry: 'gurukulacr'
+              repository: 'studentportal'
+              command: 'buildAndPush'
+              Dockerfile: Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
