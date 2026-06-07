@@ -48,3 +48,36 @@ stages:
                   inputs:
                     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
                     ArtifactName: drop
+                - task: DotNetCoreCLI@2
+                  displayName: Run Tests
+                  condition: false
+
+                  inputs:
+                    command: test
+                    projects: '**/*Tests/*.csproj'
+                - task: DotNetCoreCLI@2
+                  displayName: Run Tests
+                  condition: false
+
+                  inputs:
+                    command: test
+                    projects: '**/*Tests/*.csproj'
+
+                    arguments: >
+                      --collect:"XPlat Code Coverage"
+    - stage: SecretScan
+
+      jobs:
+
+      - job: GitLeaks
+
+        steps:
+
+        - checkout: self
+
+        - script: |
+            docker run --rm \
+            -v $(Build.SourcesDirectory):/repo \
+            zricethezav/gitleaks:latest detect \
+            --source="/repo"
+          displayName: GitLeaks Scan
