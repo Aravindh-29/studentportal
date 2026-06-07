@@ -21,6 +21,15 @@ stages:
                   inputs:
                     packageType: 'sdk'
                     version: '9.x'
+                - task: SonarCloudPrepare@4
+                  inputs:
+                    SonarQube: 'StudentPortal_Scan'
+                    organization: 'gurukul2026'
+                    scannerMode: 'dotnet'
+                    projectKey: 'gurukul2026'
+                    projectName: 'Gurukul2026'
+                  
+
                 - task: DotNetCoreCLI@2
                   displayName: Restore Packages
 
@@ -33,6 +42,15 @@ stages:
                     command: build
                     projects: StudentPortal.csproj
                     arguments: '--configuration $(buildConfiguration)'
+
+                - task: SonarCloudAnalyze@4
+                  displayName: 'Run SonarCloud Analysis'
+
+                - task: SonarCloudPublish@4
+                  displayName: 'Publish Quality Gate'
+
+                  inputs:
+                    pollingTimeoutSec: '300'
                 - task: DotNetCoreCLI@2
                   displayName: Publish Application
                   inputs:
