@@ -1,4 +1,3 @@
-
 trigger:
   branches:
     include:
@@ -102,11 +101,11 @@ stages:
             displayName: GitLeaks Scan
 
   - stage: DockerBuild
-    displayName: Build Docker Image
+    displayName: Build & Scan Docker Image
     dependsOn: SecretScan
     jobs:
-      - job: DockerBuildJob
-        displayName: Docker Build Only
+      - job: DockerBuildAndScanJob
+        displayName: Docker Build + Trivy Scan
         steps:
           - checkout: self
 
@@ -121,25 +120,44 @@ stages:
                 $(Build.BuildId)
                 latest
 
-  - stage: ImageScan
-    displayName: Image Vulnerability Scan
-    dependsOn: DockerBuild
-    jobs:
-      - job: TrivyScan
-        displayName: Trivy Image Scan
-        steps:
           - script: |
               curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+              mkdir -p $(Build.ArtifactStagingDirectory)/trivy-reports
+
+              echo "====== Saving Table Report ======"
+              trivy image \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                --format table \
+                --output $(Build.ArtifactStagingDirectory)/trivy-reports/trivy-report.txt \
+                studentportal:$(Build.BuildId)
+
+              echo "====== Saving JSON Report ======"
+              trivy image \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                --format json \
+                --output $(Build.ArtifactStagingDirectory)/trivy-reports/trivy-report.json \
+                studentportal:$(Build.BuildId)
+
+              echo "====== Enforcing Gate (fail on HIGH/CRITICAL) ======"
               trivy image \
                 --exit-code 1 \
                 --severity HIGH,CRITICAL \
                 --no-progress \
                 studentportal:$(Build.BuildId)
-            displayName: Trivy Scan
+            displayName: Trivy Image Scan
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Trivy Report
+            condition: always()
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/trivy-reports'
+              ArtifactName: trivy-scan-report
 
   - stage: DockerPush
     displayName: Push Docker Image to ACR
-    dependsOn: ImageScan
+    dependsOn: DockerBuild
     jobs:
       - job: DockerPushJob
         displayName: Docker Push
