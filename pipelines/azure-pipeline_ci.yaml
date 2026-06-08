@@ -121,6 +121,12 @@ stages:
                 latest
 
           - script: |
+              echo "======== DOCKER IMAGES =========="
+              docker images
+
+            displayName: Show Docker Images
+
+          - script: |
               curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
               mkdir -p $(Build.ArtifactStagingDirectory)/trivy-reports
 
