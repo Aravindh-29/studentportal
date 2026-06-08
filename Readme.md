@@ -1,6 +1,4 @@
-
-
-# Complete Ci pipeline 
+# Complete CI Pipeline 
 
 ```yaml
 
@@ -100,25 +98,24 @@ stages:
           - checkout: self
 
           - script: |
-              GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | sed 's/v//')
-              curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+              curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.27.2/gitleaks_8.27.2_linux_x64.tar.gz" -o gitleaks.tar.gz
               tar -xzf gitleaks.tar.gz
+              ./gitleaks version
               ./gitleaks detect --source="$(Build.SourcesDirectory)" --verbose
             displayName: GitLeaks Scan
 
   - stage: DockerBuild
-    displayName: Build Docker Image
+    displayName: Build & Scan Docker Image
     dependsOn: SecretScan
     jobs:
-      - job: DockerBuildJob
-        displayName: Docker Build Only
+      - job: DockerBuildAndScanJob
+        displayName: Docker Build + Trivy Scan
         steps:
           - checkout: self
 
           - task: Docker@2
             displayName: Build Docker Image
             inputs:
-              containerRegistry: 'gurukulacr'
               repository: 'studentportal'
               command: 'build'
               Dockerfile: Dockerfile
@@ -126,25 +123,54 @@ stages:
                 $(Build.BuildId)
                 latest
 
-  - stage: ImageScan
-    displayName: Image Vulnerability Scan
-    dependsOn: DockerBuild
-    jobs:
-      - job: TrivyScan
-        displayName: Trivy Image Scan
-        steps:
           - script: |
-              curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+              echo "======== DOCKER IMAGES =========="
+              docker images
+            displayName: Show Docker Images
+
+          - script: |
+              curl -sSfL https://github.com/aquasecurity/trivy/releases/download/v0.71.0/trivy_0.71.0_Linux-64bit.tar.gz -o trivy.tar.gz
+              tar -xzf trivy.tar.gz
+              sudo mv trivy /usr/local/bin/
+              trivy --version
+
+              mkdir -p $(Build.ArtifactStagingDirectory)/trivy-reports
+
+              echo "====== Saving Table Report ======"
+              trivy image \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                --format table \
+                --output $(Build.ArtifactStagingDirectory)/trivy-reports/trivy-report.txt \
+                studentportal:$(Build.BuildId)
+
+              echo "====== Saving JSON Report ======"
+              trivy image \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                --format json \
+                --output $(Build.ArtifactStagingDirectory)/trivy-reports/trivy-report.json \
+                studentportal:$(Build.BuildId)
+
+              echo "====== Enforcing Gate (fail on HIGH/CRITICAL) ======"
               trivy image \
                 --exit-code 1 \
                 --severity HIGH,CRITICAL \
+                --ignore-unfixed \
                 --no-progress \
                 studentportal:$(Build.BuildId)
-            displayName: Trivy Scan
+            displayName: Trivy Image Scan
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Trivy Report
+            condition: always()
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/trivy-reports'
+              ArtifactName: trivy-scan-report
 
   - stage: DockerPush
     displayName: Push Docker Image to ACR
-    dependsOn: ImageScan
+    dependsOn: DockerBuild
     jobs:
       - job: DockerPushJob
         displayName: Docker Push
@@ -152,13 +178,23 @@ stages:
           - checkout: self
 
           - task: Docker@2
+            displayName: Build Docker Image for ACR
+            inputs:
+              containerRegistry: 'studentportal'
+              repository: 'studentportal'
+              command: 'build'
+              Dockerfile: Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
+
+          - task: Docker@2
             displayName: Push Image to ACR
             inputs:
-              containerRegistry: 'gurukulacr'
+              containerRegistry: 'studentportal'
               repository: 'studentportal'
               command: 'push'
               tags: |
                 $(Build.BuildId)
                 latest
-
 ```
