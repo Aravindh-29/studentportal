@@ -1,0 +1,94 @@
+trigger: none  # CD never triggers from code push directly
+
+# Triggers only when CI pipeline completes successfully
+resources:
+  pipelines:
+    - pipeline: CI               # alias you give it
+      source: 'StudentPortal-CI' # exact name of your CI pipeline in Azure DevOps
+      trigger:
+        branches:
+          include:
+            - main
+
+pool:
+  vmImage: ubuntu-22.04
+
+variables:
+  acrImage: 'studentportal'
+
+stages:
+
+  # ─────────────────────────────────────────
+  # STAGE 1 — Deploy to Dev (auto, no approval)
+  # ─────────────────────────────────────────
+  - stage: DeployDev
+    displayName: Deploy to Dev
+    jobs:
+      - deployment: DeployToDev
+        displayName: Deploy StudentPortal to Dev
+        environment: 'Dev'          # links to the Dev environment you created
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "Deploying image: $(acrImage):$(resources.pipeline.CI.runID)"
+                    echo "Target: Dev environment"
+                    # your kubectl apply or helm upgrade command goes here
+                  displayName: Deploy to Dev
+
+                - script: |
+                    echo "Running smoke test on Dev..."
+                    # curl health check endpoint here
+                    # curl -f https://dev.studentportal.yourdomain.com/health
+                  displayName: Smoke Test Dev
+
+  # ─────────────────────────────────────────
+  # STAGE 2 — Deploy to UAT (manager approval)
+  # ─────────────────────────────────────────
+  - stage: DeployUAT
+    displayName: Deploy to UAT
+    dependsOn: DeployDev
+    jobs:
+      - deployment: DeployToUAT
+        displayName: Deploy StudentPortal to UAT
+        environment: 'UAT'          # approval gate configured on this environment
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "Deploying image: $(acrImage):$(resources.pipeline.CI.runID)"
+                    echo "Target: UAT environment"
+                    # your kubectl apply or helm upgrade command goes here
+                  displayName: Deploy to UAT
+
+                - script: |
+                    echo "Running smoke test on UAT..."
+                    # curl -f https://uat.studentportal.yourdomain.com/health
+                  displayName: Smoke Test UAT
+
+  # ─────────────────────────────────────────
+  # STAGE 3 — Deploy to Prod (manager approval)
+  # ─────────────────────────────────────────
+  - stage: DeployProd
+    displayName: Deploy to Prod
+    dependsOn: DeployUAT
+    jobs:
+      - deployment: DeployToProd
+        displayName: Deploy StudentPortal to Prod
+        environment: 'Prod'         # approval gate configured on this environment
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "Deploying image: $(acrImage):$(resources.pipeline.CI.runID)"
+                    echo "Target: Prod environment"
+                    # your kubectl apply or helm upgrade command goes here
+                  displayName: Deploy to Prod
+
+                - script: |
+                    echo "Running smoke test on Prod..."
+                    # curl -f https://studentportal.yourdomain.com/health
+                  displayName: Smoke Test Prod
