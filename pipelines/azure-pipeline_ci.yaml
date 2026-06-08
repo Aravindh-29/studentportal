@@ -112,7 +112,7 @@ stages:
           - task: Docker@2
             displayName: Build Docker Image
             inputs:
-              containerRegistry: 'gurukulacr'
+              containerRegistry: 'studentportal'
               repository: 'studentportal'
               command: 'build'
               Dockerfile: Dockerfile
@@ -167,7 +167,7 @@ stages:
           - task: Docker@2
             displayName: Push Image to ACR
             inputs:
-              containerRegistry: 'gurukulacr'
+              containerRegistry: 'studentportal'
               repository: 'studentportal'
               command: 'push'
               tags: |
