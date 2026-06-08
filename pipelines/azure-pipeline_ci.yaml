@@ -109,10 +109,11 @@ stages:
         steps:
           - checkout: self
 
+          # Build locally WITHOUT containerRegistry so image is tagged
+          # as plain "studentportal:<buildId>" — required for Trivy to find it
           - task: Docker@2
             displayName: Build Docker Image
             inputs:
-              containerRegistry: 'studentportal'
               repository: 'studentportal'
               command: 'build'
               Dockerfile: Dockerfile
@@ -123,7 +124,6 @@ stages:
           - script: |
               echo "======== DOCKER IMAGES =========="
               docker images
-
             displayName: Show Docker Images
 
           - script: |
@@ -169,6 +169,19 @@ stages:
         displayName: Docker Push
         steps:
           - checkout: self
+
+          # Fresh VM — rebuild with ACR service connection so image gets
+          # the full ACR-prefixed tag, then push immediately
+          - task: Docker@2
+            displayName: Build Docker Image for ACR
+            inputs:
+              containerRegistry: 'studentportal'
+              repository: 'studentportal'
+              command: 'build'
+              Dockerfile: Dockerfile
+              tags: |
+                $(Build.BuildId)
+                latest
 
           - task: Docker@2
             displayName: Push Image to ACR
