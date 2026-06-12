@@ -1,0 +1,10 @@
+apiVersion: v2  
+name: studentportal 
+description: Student Portal Application
+
+type: application
+
+version: 1.0.0 
+
+appVersion: "2.0"
+

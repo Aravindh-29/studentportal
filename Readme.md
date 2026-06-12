@@ -198,3 +198,26 @@ stages:
                 $(Build.BuildId)
                 latest
 ```
+
+# Grafana
+
+```
+Node
+ |
+ +-- CPU
+ +-- Memory
+ +-- Disk
+
+Pod
+ |
+ +-- CPU
+ +-- Memory
+ +-- Restarts
+
+Exporter
+ |
+Prometheus
+ |
+Grafana
+
+```
